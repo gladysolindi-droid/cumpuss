@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Campus Daily Raffle</title>
+<style>
+:root{--bg1:#140b33;--bg2:#2a0f5c;--pink:#ff3d8b;--cyan:#22e0ff;--lime:#b6ff3b;--gold:#ffc83d;--card:rgba(255,255,255,.07);--txt:#f4f1ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:radial-gradient(1200px 700px at 20% -10%,var(--bg2),var(--bg1));color:var(--txt);font-family:"Segoe UI",system-ui,Roboto,sans-serif}
+.hidden{display:none!important}
+.screen{max-width:1100px;margin:0 auto;padding:14px}
+h1.logo{font-size:clamp(28px,6vw,52px);margin:8px 0 2px;font-weight:900;letter-spacing:.5px;background:linear-gradient(90deg,var(--pink),var(--gold),var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tag{opacity:.8;margin:0 0 14px}
+.card{background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px;backdrop-filter:blur(6px)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+label{display:block;font-size:13px;opacity:.85;margin:10px 0 4px}
+input[type=text],input[type=tel],select{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.35);color:#fff;font-size:16px}
+button{cursor:pointer;border:0;border-radius:14px;padding:13px 18px;font-weight:800;font-size:16px;color:#16062e;transition:.15s transform,.15s filter}
+button:active{transform:scale(.97)}
+.b1{background:linear-gradient(90deg,var(--lime),var(--cyan))}
+.b2{background:linear-gradient(90deg,var(--pink),var(--gold))}
+.b3{background:rgba(255,255,255,.15);color:#fff}
+.big{width:100%;margin-top:10px}
+.game-card{position:relative;overflow:hidden}
+.game-card.lock{opacity:.55}
+.badge{position:absolute;right:10px;top:10px;background:var(--gold);color:#2a1500;border-radius:99px;padding:3px 10px;font-size:12px;font-weight:800}
+.stat{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}.stat span{background:rgba(255,255,255,.1);padding:6px 12px;border-radius:99px;font-size:14px}
+.hud{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin-bottom:8px}
+.pl{background:var(--card);border:2px solid transparent;border-radius:14px;padding:8px 12px;transition:.2s}
+.pl.act{border-color:var(--lime);box-shadow:0 0 18px rgba(182,255,59,.45)}
+.pl .n{font-size:13px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.pl .s{font-size:30px;font-weight:900}
+.pl.r{text-align:right}
+.mid{text-align:center;font-size:14px}.mid b{display:block;font-size:16px;color:var(--gold)}.mid .t{font-size:22px;font-weight:900}
+.wrap{position:relative}
+canvas{width:100%;height:auto;display:block;border-radius:24px;box-shadow:0 12px 40px rgba(0,0,0,.55);touch-action:none;background:#000}
+.ctrl{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+.pwr{flex:1;min-width:200px}
+.pwr input{width:100%;accent-color:var(--pink);height:30px}
+#toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);background:rgba(0,0,0,.75);padding:8px 16px;border-radius:99px;font-weight:700;opacity:0;transition:.3s;pointer-events:none;text-align:center;max-width:90%}
+#toast.on{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(8,3,20,.8);display:flex;align-items:center;justify-content:center;padding:14px;z-index:9}
+.modal .card{max-width:460px;width:100%;background:#1e0f46;max-height:92vh;overflow:auto}
+.small{font-size:12px;opacity:.75;line-height:1.5}
+.row{display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:13px}.row input{margin-top:3px}
+#status{margin-top:10px;font-weight:700;color:var(--cyan);min-height:22px}
+.res-title{font-size:34px;font-weight:900;margin:0 0 6px}
+ul.rules{padding-left:18px;font-size:14px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<div id="home" class="screen">
+  <h1 class="logo">🎱 Campus Daily Raffle</h1>
+  <p class="tag">Pocket games for campus. Play the computer for free, or challenge a real player near you.</p>
+
+  <div class="card">
+    <div class="grid">
+      <div>
+        <label>Your nickname</label>
+        <input id="nick" type="text" maxlength="14" placeholder="e.g. SharpShooter">
+      </div>
+      <div>
+        <label>Where are you playing from? (you get matched with people in the same zone)</label>
+        <select id="zone"></select>
+        <div class="row"><input type="checkbox" id="geo"><span>Match me by my GPS area instead (~1 km)</span></div>
+      </div>
+    </div>
+    <div class="stat"><span>🏆 Wins: <b id="stW">0</b></span><span>🎟️ Raffle tickets: <b id="stT">0</b></span><span>📅 Paid wins today: <b id="stD">0</b>/<b id="stM">3</b></span></div>
+  </div>
+
+  <h3>Pick a game</h3>
+  <div class="grid">
+    <div class="card game-card">
+      <span class="badge">LIVE</span>
+      <h2>🔴 Snooker · 22 balls</h2>
+      <p class="small">1 white + 15 reds + 6 colours. Red → colour → red → colour, then clear the colours Yellow→Black. Highest score wins the frame.</p>
+      <button class="b1 big" id="btnCpu">Play vs Computer (free)</button>
+      <button class="b2 big" id="btnOnline">Play a real player · KES 15</button>
+      <button class="b3 big" id="btnRules">How to play</button>
+    </div>
+    <div class="card game-card lock"><span class="badge">SOON</span><h2>🎯 Kelly Pool</h2><p class="small">Secret numbered tallies. Pot your number (or let your opponent do it for you) to win instantly.</p></div>
+    <div class="card game-card lock"><span class="badge">SOON</span><h2>📏 25-Ball Line-Up</h2><p class="small">Practice drill: clear 25 balls in a row without a miss.</p></div>
+  </div>
+  <p class="small" style="margin-top:18px">18+ only. Play responsibly. Online stakes are real money in live mode. Daily win cap applies.</p>
+</div>
+
+<!-- ============ GAME ============ -->
+<div id="game" class="screen hidden">
+  <div class="hud">
+    <div class="pl" id="p0"><div class="n" id="n0">You</div><div class="s" id="s0">0</div></div>
+    <div class="mid"><b id="phase">Pot a RED</b><span class="t" id="timer">40</span>s<div class="small" id="sub"></div></div>
+    <div class="pl r" id="p1"><div class="n" id="n1">Opponent</div><div class="s" id="s1">0</div></div>
+  </div>
+  <div class="wrap"><canvas id="cv" width="1000" height="500"></canvas><div id="toast"></div></div>
+  <div class="ctrl">
+    <div class="pwr"><div class="small">Power</div><input type="range" id="pow" min="8" max="100" value="55"></div>
+    <button class="b2" id="shoot">SHOOT</button>
+    <button class="b3" id="mute">🔊</button>
+    <button class="b3" id="resign">Quit</button>
+  </div>
+  <p class="small">Move / drag on the table to aim · click inside the "D" to place the cue ball after a cue-ball foul · Space = shoot · ←/→ fine aim</p>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div id="mRules" class="modal hidden"><div class="card">
+  <h2>Snooker rules (short)</h2>
+  <ul class="rules">
+    <li>Pot a <b>red (1)</b>, then any <b>colour (2–7)</b>, then a red again, and so on.</li>
+    <li>A potted colour goes back on its spot while reds remain.</li>
+    <li>When all 15 reds are gone, pot colours in order: Yellow 2, Green 3, Brown 4, Blue 5, Pink 6, Black 7.</li>
+    <li><b>Foul</b> (wrong ball hit first, wrong ball potted, no ball hit, cue ball potted): opponent gets 4+ points and the turn.</li>
+    <li>Miss = turn passes. 40 seconds per shot.</li>
+    <li>Highest score at the end of the frame wins. Equal score = draw (stakes refunded).</li>
+    <li>Online: each player stakes <b>KES 15</b>. Winner receives <b>KES 25</b>. Only you and your opponent can see your table.</li>
+  </ul>
+  <button class="b1 big" data-close>Got it</button>
+</div></div>
+
+<div id="mPay" class="modal hidden"><div class="card">
+  <h2>Play for real · KES 15</h2>
+  <p class="small">You will get an M-Pesa prompt for KES 15. Win and KES 25 is sent to your number. Draw = refund.</p>
+  <label>Your M-Pesa number</label>
+  <input id="phone" type="tel" placeholder="07XX XXX XXX" inputmode="tel">
+  <div class="row"><input type="checkbox" id="age"><span>I am 18 or older.</span></div>
+  <div class="row"><input type="checkbox" id="terms"><span>I understand this is a real-money game of skill and I accept the terms.</span></div>
+  <div id="status"></div>
+  <button class="b2 big" id="payGo">Pay KES 15 &amp; find opponent</button>
+  <button class="b3 big" data-close id="payCancel">Cancel</button>
+  <p class="small" id="demoNote"></p>
+</div></div>
+
+<div id="mRes" class="modal hidden"><div class="card">
+  <p class="res-title" id="resT"></p>
+  <p id="resM"></p>
+  <button class="b1 big" id="resAgain">Play again</button>
+  <button class="b3 big" id="resHome">Home</button>
+</div></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   CONFIG  – edit these
+   ===================================================================== */
+const CFG = {
+  DEMO: true,                 // true = NO real money moves (safe testing). Set false only when your backend is live.
+  API: '/api',                // your backend (Daraja): POST /stk, GET /stk/:id, POST /payout
+  STAKE: 15, PAYOUT: 25,      // KES. The 5 KES difference is the platform's commission.
+  HOUSE_NUMBER: '0743540277', // account that receives stakes (configured on the server, shown here for reference)
+  MAX_WINS_DAY: 3,            // limit on paid wins per player per day (enforce again on the server!)
+  TURN_SECS: 40,
+  ZONES: ['Main Campus', 'Hostels', 'Library Area', 'Town Side', 'Sports Grounds'],
+  // Firebase Realtime Database = real multiplayer across devices & thousands of players.
+  // Leave apiKey empty to test with two browser tabs on the same device.
+  FIREBASE: { apiKey:'', authDomain:'', databaseURL:'', projectId:'', appId:'' }
+};
+/* Suggested Firebase rules (each room readable/writable only by its 2 players – enforce via a Cloud Function that
+   writes players/{uid} when it pairs them):
+   { "rules": { "queues": { ".read": false, "$z": { ".write": "auth!=null" } },
+                "rooms": { "$r": { ".read": "auth!=null && root.child('rooms/'+$r+'/p/'+auth.uid).exists()",
+                                    ".write": "auth!=null && root.child('rooms/'+$r+'/p/'+auth.uid).exists()" } } } } */
+
+/* =====================================================================
+   HELPERS & STORAGE
+   ===================================================================== */
+const $ = s => document.querySelector(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const store = JSON.parse(localStorage.getItem('cdr') || '{}');
+const save = () => localStorage.setItem('cdr', JSON.stringify(store));
+const today = () => new Date().toISOString().slice(0, 10);
+const winsToday = () => store.day === today() ? (store.wd || 0) : 0;
+
+/* =====================================================================
+   TABLE CONSTANTS
+   ===================================================================== */
+const R = 11, L = 40, T = 40, RT = 960, BT = 460, FR = 0.9965, MAXV = 11;
+const POCK = [[L,T,24],[500,T,22],[RT,T,24],[L,BT,24],[500,BT,22],[RT,BT,24]];
+const CN = {2:'YELLOW',3:'GREEN',4:'BROWN',5:'BLUE',6:'PINK',7:'BLACK'};
+
+function rack() {
+  const b = []; let id = 0;
+  const add = (t,v,c,x,y) => b.push({id:id++,t,v,c,x,y,vx:0,vy:0,on:true,sx:x,sy:y});
+  add('w',0,'#ffffff',200,250);
+  for (let i=0;i<5;i++) for (let j=0;j<=i;j++) add('r',1,'#e0152f',753+i*19.5,250+(j-i/2)*22.2);
+  add('c',2,'#f7dc0a',240,160); add('c',3,'#17a34a',240,340); add('c',4,'#8b4a1c',240,250);
+  add('c',5,'#2563eb',500,250); add('c',6,'#f472b6',730,250); add('c',7,'#151515',900,250);
+  return b; // 1 + 15 + 6 = 22 balls
+}
+
+/* =====================================================================
+   GAME STATE
+   ===================================================================== */
+let G=null, cv, ctx, mode='cpu', me=0, names=['You','Computer'];
+let sim={run:false,shot:null}, pendingResult=null, opAim=null, lastHB=0, lastAimSent=0;
+let paid=false, phoneNum='', ended=false, tLeft=40, timerI=null, hbI=null, aiT=null;
+
+function newGame(){
+  G={balls:rack(),scores:[0,0],turn:0,phase:'red',next:2,inHand:true,over:false,aim:0,pow:.55};
+  sim={run:false,shot:null}; pendingResult=null; opAim=null; ended=false;
+}
+const redsLeft = () => G.balls.filter(b=>b.on&&b.t==='r').length;
+const need = b => G.phase==='red' ? b.t==='r' : G.phase==='color' ? b.t==='c' : (b.t==='c'&&b.v===G.next);
+const inD = (x,y) => x<=240 && Math.hypot(x-240,y-250)<=90;
+const freeSpot = (x,y,ex) => G.balls.every(o=>o===ex||!o.on||Math.hypot(o.x-x,o.y-y)>2*R+.5);
+
+function respot(b){
+  const cols=G.balls.filter(o=>o.t==='c').sort((p,q)=>q.v-p.v);
+  const spots=[[b.sx,b.sy],...cols.map(o=>[o.sx,o.sy])];
+  for(const [x,y] of spots) if(freeSpot(x,y,b)){b.x=x;b.y=y;b.on=true;b.vx=b.vy=0;return}
+  for(let x=b.sx; x<RT-R; x+=3) if(freeSpot(x,b.sy,b)){b.x=x;b.y=b.sy;b.on=true;b.vx=b.vy=0;return}
+  b.x=b.sx;b.y=b.sy;b.on=true;
+}
+function placeCueDefault(){
+  const c=G.balls[0]; c.on=true; c.vx=c.vy=0;
+  for(const [x,y] of [[200,250],[200,215],[200,285],[170,250],[225,250]]) if(freeSpot(x,y,c)){c.x=x;c.y=y;return}
+  c.x=200;c.y=250;
+}
+
+/* =====================================================================
+   PHYSICS
+   ===================================================================== */
+let lastSfx={};
+function sfx(k){
+  if(store.mute) return;
+  const now=performance.now(); if(lastSfx[k]&&now-lastSfx[k]<45) return; lastSfx[k]=now;
+  try{
+    window._ac=window._ac||new (window.AudioContext||window.webkitAudioContext)();
+    const a=window._ac,o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);
+    o.frequency.value={cue:200,ball:560,rail:150,pot:80}[k]; o.type=k==='pot'?'sine':'triangle';
+    g.gain.setValueAtTime(.07,a.currentTime); g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+.13);
+    o.start();o.stop(a.currentTime+.13);
+  }catch(e){}
+}
+
+function physics(){
+  const B=G.balls, sh=sim.shot;
+  for(const b of B){
+    if(!b.on) continue;
+    b.x+=b.vx; b.y+=b.vy; b.vx*=FR; b.vy*=FR;
+    if(Math.abs(b.vx)<.01&&Math.abs(b.vy)<.01){b.vx=b.vy=0}
+    let pk=false;
+    for(const p of POCK) if(Math.hypot(b.x-p[0],b.y-p[1])<p[2]){pk=true;break}
+    if(pk){b.on=false;b.vx=b.vy=0;sh.potted.push(b);if(b.t==='w')sh.cuePot=true;sfx('pot');continue}
+    if(b.x<L+R){b.x=L+R;b.vx=Math.abs(b.vx)*.78;sfx('rail')}
+    if(b.x>RT-R){b.x=RT-R;b.vx=-Math.abs(b.vx)*.78;sfx('rail')}
+    if(b.y<T+R){b.y=T+R;b.vy=Math.abs(b.vy)*.78;sfx('rail')}
+    if(b.y>BT-R){b.y=BT-R;b.vy=-Math.abs(b.vy)*.78;sfx('rail')}
+  }
+  for(let i=0;i<B.length;i++){
+    const a=B[i]; if(!a.on) continue;
+    for(let j=i+1;j<B.length;j++){
+      const b=B[j]; if(!b.on) continue;
+      const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
+      if(d<2*R&&d>0){
+        const nx=dx/d,ny=dy/d,ov=(2*R-d)/2;
+        a.x-=nx*ov;a.y-=ny*ov;b.x+=nx*ov;b.y+=ny*ov;
+        const vn=(a.vx-b.vx)*nx+(a.vy-b.vy)*ny;
+        if(vn>0){
+          const imp=vn*(1+.96)/2;
+          a.vx-=imp*nx;a.vy-=imp*ny;b.vx+=imp*nx;b.vy+=imp*ny;
+          sfx('ball');
+          if(sh.first===null){ if(a.t==='w')sh.first=b; else if(b.t==='w')sh.first=a; }
+        }
+      }
+    }
+  }
+}
+const stopped = () => G.balls.every(b=>!b.on||(b.vx===0&&b.vy===0));
+
+function shoot(ang,pow,cx,cy,mine){
+  const c=G.balls[0];
+  if(cx!=null){c.x=cx;c.y=cy}
+  G.inHand=false; opAim=null;
+  const v=pow*MAXV; c.vx=Math.cos(ang)*v; c.vy=Math.sin(ang)*v;
+  sim.shot={first:null,potted:[],cuePot:false,mine}; sim.run=true; sfx('cue');
+}
+
+/* =====================================================================
+   RULES ENGINE
+   ===================================================================== */
+function setPhaseAfterMiss(){
+  if(G.phase==='color') G.phase=redsLeft()>0?'red':'seq';
+  if(G.phase==='red'&&redsLeft()===0) G.phase='seq';
+}
+function evaluate(sh){
+  const me_=G.turn, op=1-me_; let foul=false, fv=4;
+  const first=sh.first;
+  if(!first) foul=true; else if(!need(first)){foul=true;fv=Math.max(fv,first.v)}
+  if(sh.cuePot) foul=true;
+  const pots=sh.potted.filter(b=>b.t!=='w');
+  for(const b of pots) if(!need(b)){foul=true;fv=Math.max(fv,b.v)}
+  const legal=pots.filter(need);
+  if(G.phase!=='red'&&legal.length>1) foul=true;
+  const rl=redsLeft();
+
+  if(foul){
+    G.scores[op]+=fv;
+    for(const b of pots) if(b.t==='c') respot(b);
+    if(sh.cuePot){placeCueDefault();G.inHand=true}
+    G.turn=op; setPhaseAfterMiss();
+    toast('Foul! '+fv+' points to '+names[op]);
+  } else if(legal.length){
+    if(G.phase==='red'){G.scores[me_]+=legal.length;G.phase='color'}
+    else if(G.phase==='color'){
+      const c=legal[0];G.scores[me_]+=c.v;
+      if(rl>0){respot(c);G.phase='red'} else {G.phase='seq';G.next=2}
+    } else {G.scores[me_]+=legal[0].v;G.next++;if(G.next>7)G.over=true}
+    toast('+'+(G.scores[me_]));
+  } else {
+    G.turn=op; setPhaseAfterMiss();
+  }
+}
+const pack = () => ({b:G.balls.map(b=>[+b.x.toFixed(2),+b.y.toFixed(2),b.on?1:0]),s:G.scores,t:G.turn,p:G.phase,n:G.next,h:G.inHand,o:G.over});
+function unpack(m){
+  m.b.forEach((a,i)=>{const b=G.balls[i];b.x=a[0];b.y=a[1];b.on=!!a[2];b.vx=b.vy=0});
+  G.scores=m.s;G.turn=m.t;G.phase=m.p;G.next=m.n;G.inHand=m.h;G.over=m.o;
+}
+function onShotEnd(){
+  const sh=sim.shot;
+  if(mode==='online'){
+    if(sh.mine){evaluate(sh);Net.send({t:'res',s:pack()});afterEval()}
+    else if(pendingResult){applyResult(pendingResult)}
+  } else {evaluate(sh);afterEval()}
+}
+function applyResult(m){pendingResult=null;unpack(m.s);afterEval()}
+function afterEval(){
+  hud();
+  if(G.over){endGame('Frame complete');return}
+  startTurn();
+}
+
+/* =====================================================================
+   TURNS, TIMER, AI
+   ===================================================================== */
+function myTurn(){return !G.over&&G.turn===me}
+function canAct(){return G&&myTurn()&&!sim.run&&!ended}
+function startTurn(){
+  tLeft=CFG.TURN_SECS; hud();
+  clearTimeout(aiT);
+  if(mode==='cpu'&&G.turn===1&&!G.over) aiT=setTimeout(aiMove,900);
+}
+function timeoutPass(){
+  toast("Time's up!"); G.turn=1-G.turn; setPhaseAfterMiss();
+  if(mode==='online') Net.send({t:'res',s:pack()});
+  startTurn();
+}
+function tick(){
+  if(!G||G.over||sim.run||ended) return;
+  tLeft--; if(tLeft<0)tLeft=0; $('#timer').textContent=tLeft;
+  if(tLeft<=0&&myTurn()) timeoutPass();
+  if(mode==='online'&&Date.now()-lastHB>30000){endGame('Opponent disconnected',me)}
+}
+function segDist(px,py,ax,ay,bx,by){
+  const dx=bx-ax,dy=by-ay,l2=dx*dx+dy*dy||1;
+  let t=((px-ax)*dx+(py-ay)*dy)/l2; t=Math.max(0,Math.min(1,t));
+  return Math.hypot(px-(ax+t*dx),py-(ay+t*dy));
+}
+function aiMove(){
+  if(G.over||sim.run||G.turn!==1) return;
+  const c=G.balls[0], legal=G.balls.filter(b=>b.on&&b.t!=='w'&&need(b));
+  let best=null;
+  for(const b of legal) for(const p of POCK){
+    const dx=p[0]-b.x,dy=p[1]-b.y,dd=Math.hypot(dx,dy),ux=dx/dd,uy=dy/dd;
+    const gx=b.x-ux*2*R,gy=b.y-uy*2*R,cx=gx-c.x,cy=gy-c.y,cd=Math.hypot(cx,cy);
+    if(cd<2) continue;
+    const cut=(cx/cd)*ux+(cy/cd)*uy; if(cut<.4) continue;
+    const blocked=G.balls.some(o=>o.on&&o!==c&&o!==b&&(segDist(o.x,o.y,c.x,c.y,gx,gy)<2*R-1||segDist(o.x,o.y,b.x,b.y,p[0],p[1])<2*R-1));
+    if(blocked) continue;
+    const sc=cut*2-(cd+dd)/900;
+    if(!best||sc>best.sc) best={sc,ang:Math.atan2(cy,cx),dist:cd+dd};
+  }
+  let ang,pow;
+  if(best){ang=best.ang+(Math.random()-.5)*.035;pow=Math.max(.3,Math.min(.9,.25+best.dist/1100))}
+  else{
+    const t=legal.sort((a,b)=>Math.hypot(a.x-c.x,a.y-c.y)-Math.hypot(b.x-c.x,b.y-c.y))[0]||G.balls.find(b=>b.on&&b.t!=='w');
+    ang=Math.atan2(t.y-c.y,t.x-c.x)+(Math.random()-.5)*.08; pow=.35+Math.random()*.25;
+  }
+  G.aim=ang; setTimeout(()=>shoot(ang,pow,null,null,true),550);
+}
+
+/* =====================================================================
+   DRAWING
+   ===================================================================== */
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function drawAim(a,cx,cy,pull,full){
+  const dx=Math.cos(a),dy=Math.sin(a);
+  let tBest=1e9,hit=null;
+  for(const o of G.balls){
+    if(!o.on||o===G.balls[0]) continue;
+    const ox=o.x-cx,oy=o.y-cy,b=ox*dx+oy*dy,p2=ox*ox+oy*oy-b*b;
+    if(b>0&&p2<4*R*R){const t=b-Math.sqrt(4*R*R-p2);if(t<tBest){tBest=t;hit=o}}
+  }
+  const wall=[];
+  if(dx>0)wall.push((RT-R-cx)/dx); if(dx<0)wall.push((L+R-cx)/dx);
+  if(dy>0)wall.push((BT-R-cy)/dy); if(dy<0)wall.push((T+R-cy)/dy);
+  const tw=Math.min(...wall); if(!hit||tw<tBest){tBest=tw;hit=null}
+  ctx.save();
+  ctx.strokeStyle=full?'rgba(255,255,255,.85)':'rgba(255,255,255,.3)';ctx.lineWidth=2;ctx.setLineDash([8,7]);
+  ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+dx*tBest,cy+dy*tBest);ctx.stroke();ctx.setLineDash([]);
+  if(full&&hit){
+    const gx=cx+dx*tBest,gy=cy+dy*tBest;
+    ctx.beginPath();ctx.arc(gx,gy,R,0,7);ctx.stroke();
+    const nx=hit.x-gx,ny=hit.y-gy,nl=Math.hypot(nx,ny)||1;
+    ctx.strokeStyle='rgba(255,200,61,.9)';ctx.beginPath();ctx.moveTo(hit.x,hit.y);ctx.lineTo(hit.x+nx/nl*55,hit.y+ny/nl*55);ctx.stroke();
+  }
+  const s=R+6+pull*70;
+  ctx.lineCap='round';
+  ctx.strokeStyle='#3a2312';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(cx-dx*(s+170),cy-dy*(s+170));ctx.lineTo(cx-dx*(s+300),cy-dy*(s+300));ctx.stroke();
+  ctx.strokeStyle='#e8c07a';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(cx-dx*s,cy-dy*s);ctx.lineTo(cx-dx*(s+175),cy-dy*(s+175));ctx.stroke();
+  ctx.strokeStyle='#7ad7ff';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(cx-dx*s,cy-dy*s);ctx.lineTo(cx-dx*(s+5),cy-dy*(s+5));ctx.stroke();
+  ctx.restore();
+}
+function draw(){
+  ctx.clearRect(0,0,1000,500);
+  let g=ctx.createLinearGradient(0,0,0,500);g.addColorStop(0,'#9a5424');g.addColorStop(1,'#552a0e');
+  ctx.fillStyle=g;rr(0,0,1000,500,28);ctx.fill();
+  g=ctx.createRadialGradient(500,250,60,500,250,540);g.addColorStop(0,'#22b365');g.addColorStop(1,'#0a6a38');
+  ctx.fillStyle=g;ctx.fillRect(L,T,RT-L,BT-T);
+  ctx.strokeStyle='rgba(0,0,0,.35)';ctx.lineWidth=6;ctx.strokeRect(L,T,RT-L,BT-T);
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(240,T);ctx.lineTo(240,BT);ctx.stroke();
+  ctx.beginPath();ctx.arc(240,250,90,Math.PI/2,Math.PI*1.5);ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.35)';
+  for(const s of [[240,160],[240,340],[240,250],[500,250],[730,250],[900,250]]){ctx.beginPath();ctx.arc(s[0],s[1],2.5,0,7);ctx.fill()}
+  for(const p of POCK){ctx.fillStyle='#030303';ctx.beginPath();ctx.arc(p[0],p[1],p[2]-2,0,7);ctx.fill();ctx.strokeStyle='#e0b050';ctx.lineWidth=3;ctx.stroke()}
+  if(!G) return;
+  for(const b of G.balls){
+    if(!b.on) continue;
+    ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(b.x+3,b.y+4,R,R*.8,0,0,7);ctx.fill();
+    const gr=ctx.createRadialGradient(b.x-3.5,b.y-3.5,1,b.x,b.y,R+1);
+    gr.addColorStop(0,'#fff');gr.addColorStop(.25,b.c);gr.addColorStop(1,'rgba(0,0,0,.65)');
+    ctx.fillStyle=b.t==='w'?'#fff':b.c;ctx.beginPath();ctx.arc(b.x,b.y,R,0,7);ctx.fill();
+    ctx.fillStyle=gr;ctx.globalAlpha=b.t==='w'?.55:.8;ctx.beginPath();ctx.arc(b.x,b.y,R,0,7);ctx.fill();ctx.globalAlpha=1;
+  }
+  const c=G.balls[0];
+  if(!sim.run&&!G.over){
+    if(G.inHand&&myTurn()){ctx.strokeStyle='rgba(182,255,59,.8)';ctx.lineWidth=2;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(240,250,90,Math.PI/2,Math.PI*1.5);ctx.stroke();ctx.setLineDash([])}
+    if(myTurn()) drawAim(G.aim,c.x,c.y,G.pow,true);
+    else if(mode==='online'&&opAim) drawAim(opAim.a,c.x,c.y,.2,false);
+  }
+}
+function loop(){
+  if(G&&sim.run){
+    for(let i=0;i<8;i++) physics();
+    if(stopped()){sim.run=false;onShotEnd()}
+  }
+  draw(); requestAnimationFrame(loop);
+}
+
+/* =====================================================================
+   HUD & UI
+   ===================================================================== */
+let toastT;
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),1800)}
+function hud(){
+  if(!G) return;
+  $('#n0').textContent=names[0]+(me===0?' (you)':'');$('#n1').textContent=names[1]+(me===1?' (you)':'');
+  $('#s0').textContent=G.scores[0];$('#s1').textContent=G.scores[1];
+  $('#p0').classList.toggle('act',G.turn===0);$('#p1').classList.toggle('act',G.turn===1);
+  const who=G.turn===me?'Your turn: ':names[G.turn]+': ';
+  $('#phase').textContent=who+(G.phase==='red'?'pot a RED':G.phase==='color'?'pot a COLOUR':'pot the '+CN[Math.min(G.next,7)]+' ('+G.next+')');
+  const rem=redsLeft()*8+27; $('#sub').textContent=G.phase==='seq'?'Clearing the colours':'Reds left: '+redsLeft();
+  $('#timer').textContent=tLeft;
+  $('#shoot').disabled=!canAct();$('#shoot').style.opacity=canAct()?1:.45;
+}
+function refreshHome(){
+  $('#stW').textContent=store.wins||0;$('#stT').textContent=store.tickets||0;$('#stD').textContent=winsToday();$('#stM').textContent=CFG.MAX_WINS_DAY;
+}
+function show(id){for(const s of ['home','game'])$('#'+s).classList.toggle('hidden',s!==id)}
+const modal=(id,on)=>$('#'+id).classList.toggle('hidden',!on);
+
+/* =====================================================================
+   INPUT
+   ===================================================================== */
+function ptr(e){
+  if(!canAct()) return;
+  const r=cv.getBoundingClientRect(),x=(e.clientX-r.left)*1000/r.width,y=(e.clientY-r.top)*500/r.height,c=G.balls[0];
+  const pressed=e.type==='pointerdown'||e.buttons;
+  if(G.inHand&&pressed&&inD(x,y)&&freeSpot(x,y,c)&&x>L+R&&Math.hypot(x-c.x,y-c.y)>0){c.x=x;c.y=y}
+  else if(e.type==='pointerdown'||e.pointerType==='mouse'||e.buttons){G.aim=Math.atan2(y-c.y,x-c.x)}
+  sendAim();
+}
+function sendAim(){
+  if(mode!=='online') return; const n=Date.now(); if(n-lastAimSent<120) return; lastAimSent=n;
+  const c=G.balls[0]; Net.send({t:'aim',a:G.aim,x:c.x,y:c.y});
+}
+function playerShoot(){
+  if(!canAct()) return;
+  const c=G.balls[0];
+  if(mode==='online') Net.send({t:'shot',a:G.aim,p:G.pow,x:c.x,y:c.y});
+  shoot(G.aim,G.pow,c.x,c.y,true);
+}
+
+/* =====================================================================
+   PAYMENTS (adapter – real money must be handled by YOUR SERVER)
+   ===================================================================== */
+function normPhone(p){
+  p=(p||'').replace(/[^\d+]/g,'').replace(/^\+/,'');
+  if(/^0[17]\d{8}$/.test(p)) return '254'+p.slice(1);
+  if(/^254[17]\d{8}$/.test(p)) return p;
+  return null;
+}
+async function api(path,body){
+  const r=await fetch(CFG.API+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  return r.json();
+}
+async function stk(phone){ // charge the player KES 15 (Daraja STK push on the server → money lands in the house account)
+  if(CFG.DEMO){await sleep(1500);return {ok:true,ref:'DEMO'+Date.now()}}
+  try{
+    const j=await api('/stk',{phone,amount:CFG.STAKE}); if(!j.checkoutId) return {ok:false};
+    for(let i=0;i<30;i++){await sleep(3000);const s=await api('/stk/'+j.checkoutId);
+      if(s.status==='paid') return {ok:true,ref:j.checkoutId}; if(s.status==='failed') return {ok:false}}
+  }catch(e){} return {ok:false};
+}
+async function payout(phone,kind){ // kind: 'win' (KES 25) or 'refund' (KES 15). The SERVER must verify the result before paying (Daraja B2C).
+  if(CFG.DEMO){await sleep(1200);return true}
+  try{const j=await api('/payout',{phone,kind,room:Net.room,ref:window._payRef});return !!j.ok}catch(e){return false}
+}
+
+/* =====================================================================
+   NETWORK (Firebase for real multiplayer, BroadcastChannel for same-device demo)
+   ===================================================================== */
+const loadScript=src=>new Promise((ok,no)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+const Net={
+  kind:null,onmsg:null,room:null,role:0,
+  async init(){
+    if(CFG.FIREBASE.apiKey){
+      if(!window.firebase) for(const f of ['app','auth','database']) await loadScript('https://www.gstatic.com/firebasejs/10.12.2/firebase-'+f+'-compat.js');
+      if(!firebase.apps.length) firebase.initializeApp(CFG.FIREBASE);
+      const cr=await firebase.auth().signInAnonymously(); this.uid=cr.user.uid; this.db=firebase.database(); this.kind='fb';
+    } else {this.kind='bc';this.uid=Math.random().toString(36).slice(2,9)}
+  },
+  match(zone,name){return this.kind==='fb'?this.fbMatch(zone,name):this.bcMatch(zone,name)},
+  async fbMatch(zone,name){
+    const db=this.db,uid=this.uid,q=db.ref('queues/'+zone+'/waiting');let taken=null;
+    const res=await q.transaction(cur=>{taken=null;if(cur&&cur.uid!==uid&&Date.now()-cur.ts<90000){taken=cur;return null}return {uid,name,ts:Date.now()}});
+    if(taken&&!res.snapshot.val()){
+      const room=db.ref('rooms').push().key;
+      await db.ref('queues/'+zone+'/matches/'+taken.uid).set({room,opp:name});
+      return this.openFB(room,1,taken.name);
+    }
+    return new Promise(resolve=>{
+      const mref=db.ref('queues/'+zone+'/matches/'+uid);let done=false,to;
+      const h=mref.on('value',s=>{const v=s.val();if(v&&!done){done=true;mref.off('value',h);mref.remove();clearTimeout(to);resolve(this.openFB(v.room,0,v.opp))}});
+      to=setTimeout(async()=>{if(done)return;done=true;mref.off('value',h);await q.transaction(c=>c&&c.uid===uid?null:c);resolve(null)},60000);
+    });
+  },
+  openFB(room,role,opp){
+    this.room=room;this.role=role;this.ref=this.db.ref('rooms/'+room+'/m');
+    this.ref.on('child_added',s=>{const m=s.val();if(m.f!==role&&this.onmsg)this.onmsg(m)});
+    return {room,role,opp};
+  },
+  bcMatch(zone,name){
+    return new Promise(res=>{
+      const id=this.uid,ts=Date.now(),ch=new BroadcastChannel('cdr-q-'+zone);let done=false,iv,to;
+      const fin=(room,role,opp)=>{if(done)return;done=true;clearInterval(iv);clearTimeout(to);ch.close();res(this.openBC(room,role,opp))};
+      ch.onmessage=e=>{const m=e.data;
+        if(m.t==='seek'&&m.id!==id&&ts<m.ts&&!done){const room='r'+id+m.id;ch.postMessage({t:'acc',to:m.id,name,room});fin(room,0,m.name)}
+        else if(m.t==='acc'&&m.to===id){fin(m.room,1,m.name)}};
+      const seek=()=>ch.postMessage({t:'seek',id,ts,name});seek();iv=setInterval(seek,1000);
+      to=setTimeout(()=>{if(!done){done=true;clearInterval(iv);ch.close();res(null)}},60000);
+    });
+  },
+  openBC(room,role,opp){
+    this.room=room;this.role=role;this.ch=new BroadcastChannel('cdr-r-'+room);
+    this.ch.onmessage=e=>{const m=e.data;if(m.f!==role&&this.onmsg)this.onmsg(m)};
+    return {room,role,opp};
+  },
+  send(m){m.f=this.role;if(this.kind==='fb')this.ref.push(m);else if(this.ch)this.ch.postMessage(m)},
+  close(){
+    try{if(this.kind==='fb'&&this.ref){this.ref.off();if(this.role===0){const r=this.room;setTimeout(()=>this.db.ref('rooms/'+r).remove(),15000)}}
+        if(this.ch){this.ch.close();this.ch=null}}catch(e){}
+  }
+};
+Net.onmsg=m=>{
+  if(!G||mode!=='online') return; lastHB=Date.now();
+  if(m.t==='shot'&&G.turn!==me&&!sim.run) shoot(m.a,m.p,m.x,m.y,false);
+  else if(m.t==='aim') opAim=m;
+  else if(m.t==='res'){ if(sim.run) pendingResult=m; else applyResult(m) }
+  else if(m.t==='resign') endGame('Opponent resigned',me);
+};
+
+/* =====================================================================
+   FLOW
+   ===================================================================== */
+function zoneKey(){return $('#zone').value}
+async function getZone(){
+  if(!$('#geo').checked) return 'z-'+zoneKey();
+  return new Promise(res=>navigator.geolocation?navigator.geolocation.getCurrentPosition(
+    p=>res('g-'+p.coords.latitude.toFixed(2).replace('.','_')+'_'+p.coords.longitude.toFixed(2).replace('.','_')),
+    ()=>res('z-'+zoneKey()),{timeout:6000}):res('z-'+zoneKey()));
+}
+function beginGame(){
+  newGame(); show('game'); modal('mRes',false); modal('mPay',false);
+  $('#pow').value=Math.round(G.pow*100); tLeft=CFG.TURN_SECS; hud();
+  clearInterval(timerI); timerI=setInterval(tick,1000);
+  clearInterval(hbI); if(mode==='online') hbI=setInterval(()=>Net.send({t:'hb'}),5000);
+  startTurn();
+}
+function startCpu(){
+  mode='cpu';me=0;paid=false;names=[($('#nick').value||'You').slice(0,14),'Computer'];beginGame();
+}
+async function startOnline(){
+  const st=$('#status'),phone=normPhone($('#phone').value);
+  if(!phone){st.textContent='Enter a valid Safaricom/Airtel number (07… or 01…).';return}
+  if(!$('#age').checked||!$('#terms').checked){st.textContent='Please confirm you are 18+ and accept the terms.';return}
+  if(winsToday()>=CFG.MAX_WINS_DAY){st.textContent='Daily paid-win limit reached. Try the free game or come back tomorrow.';return}
+  $('#payGo').disabled=true; phoneNum=phone; store.phone=$('#phone').value; save();
+  st.textContent='Check your phone for the M-Pesa prompt (KES '+CFG.STAKE+')…';
+  const p=await stk(phone);
+  if(!p.ok){st.textContent='Payment not completed.';$('#payGo').disabled=false;return}
+  paid=true; window._payRef=p.ref;
+  st.textContent='Paid ✔ Looking for an opponent near you…';
+  try{
+    await Net.init();
+    const zone=await getZone();
+    const nick=($('#nick').value||'Player').slice(0,14);
+    const m=await Net.match(zone,nick);
+    if(!m){
+      st.textContent='No opponent found. Refunding your stake…';
+      const ok=await payout(phone,'refund'); paid=false;
+      st.textContent=ok?'No opponent found – KES '+CFG.STAKE+' refunded.':'No opponent. Refund is pending – contact support.';
+      $('#payGo').disabled=false;return;
+    }
+    mode='online';me=m.role;names=[];names[me]=nick;names[1-me]=m.opp||'Opponent';lastHB=Date.now();
+    beginGame(); toast(me===0?'You break!':names[0]+' breaks');
+  }catch(e){
+    st.textContent='Connection problem. Refunding…'; await payout(phone,'refund'); paid=false; $('#payGo').disabled=false;
+  }
+}
+async function endGame(why,forced){
+  if(ended) return; ended=true; sim.run=false; clearTimeout(aiT);
+  const w=forced!==undefined?forced:(G.scores[0]>G.scores[1]?0:G.scores[1]>G.scores[0]?1:-1);
+  G.over=true; hud();
+  const t=$('#resT'),m=$('#resM'); modal('mRes',true);
+  if(w===-1){t.textContent='🤝 Draw';m.textContent=why+'. Scores level.'}
+  else if(w===me){t.textContent='🏆 You won!';m.textContent=why+'. '+G.scores[me]+' – '+G.scores[1-me]}
+  else{t.textContent='😬 You lost';m.textContent=why+'. '+G.scores[me]+' – '+G.scores[1-me]}
+  if(mode==='online'&&paid){
+    if(w===me){
+      m.textContent+=' Sending KES '+CFG.PAYOUT+' to your M-Pesa…';
+      const ok=await payout(phoneNum,'win');
+      store.wins=(store.wins||0)+1;store.tickets=(store.tickets||0)+1;
+      store.day=today();store.wd=winsToday()+1;save();
+      m.textContent=why+'. '+(ok?'KES '+CFG.PAYOUT+' sent to '+phoneNum+'! 🎟️ +1 raffle ticket.':'Win recorded – payout pending, contact support.');
+    } else if(w===-1){
+      const ok=await payout(phoneNum,'refund'); m.textContent+=ok?' Your KES '+CFG.STAKE+' was refunded.':' Refund pending.';
+    } else m.textContent+=' Better luck next time!';
+    paid=false;
+  } else if(mode==='cpu'&&w===me){store.wins=(store.wins||0)+0}
+  Net.close(); clearInterval(hbI); refreshHome();
+}
+
+/* =====================================================================
+   INIT
+   ===================================================================== */
+window.addEventListener('DOMContentLoaded',()=>{
+  cv=$('#cv');ctx=cv.getContext('2d');
+  $('#zone').innerHTML=CFG.ZONES.map(z=>'<option>'+z+'</option>').join('');
+  $('#nick').value=store.nick||'';$('#phone').value=store.phone||'';
+  $('#demoNote').textContent=CFG.DEMO?'DEMO MODE: no real money is charged or paid.':'';
+  refreshHome();
+  $('#nick').addEventListener('input',e=>{store.nick=e.target.value;save()});
+  $('#btnCpu').onclick=startCpu;
+  $('#btnOnline').onclick=()=>{$('#status').textContent='';$('#payGo').disabled=false;modal('mPay',true)};
+  $('#btnRules').onclick=()=>modal('mRules',true);
+  document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>{b.closest('.modal').classList.add('hidden')}));
+  $('#payGo').onclick=startOnline;
+  $('#pow').oninput=e=>{if(G)G.pow=e.target.value/100};
+  $('#shoot').onclick=playerShoot;
+  $('#mute').onclick=()=>{store.mute=!store.mute;save();$('#mute').textContent=store.mute?'🔇':'🔊'};
+  $('#mute').textContent=store.mute?'🔇':'🔊';
+  $('#resign').onclick=()=>{
+    if(!G||G.over){show('home');return}
+    if(!confirm(mode==='online'?'Quit and forfeit the match?':'Quit this game?'))return;
+    if(mode==='online'){Net.send({t:'resign'});endGame('You resigned',1-me)} else {ended=true;clearTimeout(aiT);clearInterval(timerI);show('home')}
+  };
+  $('#resHome').onclick=()=>{modal('mRes',false);clearInterval(timerI);show('home');refreshHome()};
+  $('#resAgain').onclick=()=>{modal('mRes',false);clearInterval(timerI);show('home');if(mode==='cpu')startCpu();else modal('mPay',true)};
+  cv.addEventListener('pointerdown',ptr);cv.addEventListener('pointermove',ptr);
+  addEventListener('keydown',e=>{
+    if(!G||$('#game').classList.contains('hidden'))return;
+    if(e.code==='Space'){e.preventDefault();playerShoot()}
+    if(e.code==='ArrowLeft'&&canAct()){G.aim-=.0035}
+    if(e.code==='ArrowRight'&&canAct()){G.aim+=.0035}
+  });
+  newGame(); requestAnimationFrame(loop);
+});
+</script>
+</body>
+</html>
